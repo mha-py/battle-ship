@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit, jit
 import random
+from bs_gameclass import *
 
 def create_sea(seed=None):
     'Creates a sea with random ships on it'
@@ -64,12 +65,24 @@ def create_detection(seed=None, l=5):
         det = det.T
     return det
 
+
+def newrandomstate(t=1.):
+    s = GameState()
+    s.det = np.random.rand(10,10) < np.random.rand()*t
+    s.sea = create_sea()
+    s.sea *= s.det
+    return s
+
+
+
 def visualize(sea, detection):
     'Erstellt eine Veranschaulichung, 0 bzw. 4 sind detektiertes Wasser bzw. Schiff, 1 und 2 sind undetektiert.'
     return sea + sea*detection + 1 - ((1-sea)*detection)
+
 
 def plot_sea(sea, det, ax=None):
     if ax is None: ax = plt.gca()
     #ax.imshow(visualize(sea, det), vmin=-2, cmap='plasma')
     ax.imshow(visualize(sea, det), vmin=-1, vmax=3.15, cmap='cividis')
     ax.axis('off')
+    

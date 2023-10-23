@@ -15,7 +15,7 @@ sigmoid = torch.nn.Sigmoid()
 
 
 
-class bship_unet(nn.Module):
+class bs_unet(nn.Module):
     def __init__(self, n=32):
         'BattleShip CNN. More than 1 blocks didnt make a difference.'
         super().__init__()

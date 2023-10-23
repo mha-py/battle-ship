@@ -8,14 +8,14 @@ nShipFields = 30
 
 
 
-net = bship_unet()
-net.eval()
+unet = bs_unet()
+unet.eval()
 
 with open('data/battleships_unet.dat', 'rb') as f:
-    net.load_state_dict(torch.load(f))
+    unet.load_state_dict(torch.load(f))
 
 _probabilities = dict()
-def _getprobability(s):
+def getprobability(s, net=unet):
     h = GameClass.getHashable(s)
     if not h in _probabilities:
         with torch.no_grad():
@@ -49,7 +49,7 @@ class GameClass:
         s = s.copy()
         if type(hidden) is type(None):
             # no information of ships, must be rolled out
-            s.sea[a] = np.random.rand() < _getprobability(s)[a]
+            s.sea[a] = np.random.rand() < getprobability(s)[a]
             s.det[a] = 1
         else:
             # information of ships is given in array `hidden`
@@ -79,18 +79,29 @@ class GameClass:
     def mirrorx_state(s):
         s.sea = s.sea[:, ::-1]
         s.det = s.det[:, ::-1]
+        return s
     @staticmethod
     def mirrory_state(s):
         s.sea = s.sea[::-1]
         s.det = s.det[::-1]
+        return s
     @staticmethod
     def mirrorx_action(a):
         i, j = a
-        return SX-i, j
+        return SX-1-i, j
     @staticmethod
     def mirrory_action(a):
         i, j = a
-        return i, SY-j
+        return i, SY-1-j
+    @staticmethod
+    def mirror_transpose_state(s):
+        s.sea = s.sea.T
+        s.det = s.det.T
+        return s
+    @staticmethod
+    def mirror_transpose_action(a):
+        i, j = a
+        return j, i
     
     
 

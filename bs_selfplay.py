@@ -15,7 +15,7 @@ class TrivialPlayer:
     
 class UnetPlayer(TrivialPlayer):
     def findmove(self, s):
-        prob = net.predict(encode_x(s.sea, s.det))
+        prob = unet.predict(encode_x(s.sea, s.det))
         prob[s.det > 0] = 0
         ij = prob.argmax()
         i, j = ij//SX, ij%SX
@@ -38,7 +38,13 @@ def selfplay_batched(ai, ngames=1000, verbose=0):
         pbar = tqdm(total=ngames)
         
     def newstate():
-        return GameState(), create_sea()
+        s = GameState()
+        s.sea = create_sea()
+        s.det = np.random.rand(SX, SY) < np.random.rand()
+        h = s.sea
+        if GameClass.getEnded(s):
+            return newstate()
+        return s, h
             
     global states, records
     try:
