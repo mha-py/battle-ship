@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit, jit
 import random
+
 from bs_gameclass import *
 
 def create_sea(seed=None):
