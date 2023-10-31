@@ -12,7 +12,7 @@ def np2t(*args):
     res = [torch.from_numpy(np.array(x, dtype='float32')) for x in args]
     if GPU:
         res = [x.cuda() for x in res]
-        
+
     if len(res)==1:
         return res[0]
     else:
@@ -22,13 +22,13 @@ def np2t(*args):
 def t2np(*args):
     'Converts a torch array to a numpy array'
     res = [x.detach().cpu().numpy() for x in args]
-    
+
     if len(res)==1:
         return res[0]
     else:
         return res
-    
-    
+
+
 def load_checkpoint(model, path):
     'Load with mismatched layer sizes'
     load_dict = torch.load(path)
@@ -42,14 +42,14 @@ def load_checkpoint(model, path):
         else:
             print('Ignoring (since not in data)', k)
     model.load_state_dict(model_dict)
-    
-    
+
+
 
 #### Batchgenerator ####
 
 def batchgenerator_v2(indarray, readout_xy, batchsize=32, permute=True):
     indarray = np.asarray(indarray)
-    
+
     numind = len(indarray)
     while True:
         if permute:
@@ -61,11 +61,11 @@ def batchgenerator_v2(indarray, readout_xy, batchsize=32, permute=True):
             xs, ys = readout_xy(inds)
             yield xs, ys
 
-            
+
 def batchgenerator_v2_single(indarray, readout_xy, batchsize=32, permute=True):
     # for only xs output (instead of xs and ys)
     indarray = np.asarray(indarray)
-    
+
     numind = len(indarray)
     while True:
         if permute:
@@ -77,8 +77,8 @@ def batchgenerator_v2_single(indarray, readout_xy, batchsize=32, permute=True):
             #xs, ys = readout_xy(inds)
             xs = readout_xy(inds)
             yield xs
-            
-            
+
+
 def getbatchgen(indarray, readout_xy, batchsize=32, permute=True, single=False):
     '''Wrapper of the batchgenerator, which additionally gives the number of steps per epoche.
     This value is needed by the model.fit_generator function.'''
@@ -145,8 +145,8 @@ def blurr_imgs(imgs, radius):
     imgs = signal.convolve(imgs, kernel, mode='full')
     imgs = imgs[:, n//2:-n//2+1, n//2:-n//2+1]
     return imgs
- 
-    
+
+
 _tkernels = {}
 def tkernel(radius, c):
     global _tkernels
@@ -276,44 +276,44 @@ def update_mt(mt, n, tau):
     for k in mtdict.keys():
         mtdict[k] = tau * mtdict[k] + (1-tau) * ndict[k]
     mt.load_state_dict(mtdict)
-    
 
-    
+
+
 class AttentionLayer(nn.Module):
     def __init__(self, n, m):
         super().__init__()
-        
+
         self.qkv = nn.Conv1d(n, 2*m + n, 1) # all in one layer: q and k have n//8 channels, v has n channels
         self.nm = (n,m)
-        
+
         ##self.postlayer = nn.Conv2d(n, n, 1)
-        
+
         self.gamma = nn.Parameter(torch.tensor([1.])) #### instead of 0.0
-    
+
     def forward(self, x):
         x0 = x
-        
+
         b, c, h, w = x.shape
         n, m = self.nm
-        
+
         x = relu(x)
-        
+
         qkv = self.qkv(x.view(b, c, h*w))
         #q, k, v = qkv[:,:c//2], qkv[:,c//2:2*c//2], qkv[:,2*c//2:]
         q, k, v = torch.split(qkv, [m, m, n], dim=1)
         beta = torch.bmm(q.permute(0,2,1), k) # has dimensions b, h*w, h*w
         beta = beta / np.sqrt(m)
-        
+
         beta = F.softmax(beta, dim=1)
-        self.last_beta = beta
-        
+        ###self.last_beta = beta
+
         o = torch.bmm(v, beta)
         o = o.reshape(b, c, h, w)
         ##o = self.postlayer(o)
-        
+
         return x0 + self.gamma * o
-    
-    
+
+
 #=============================================================
 
 from torch import nn
@@ -321,8 +321,8 @@ import torch
 avgpool = nn.AvgPool2d(2)
 
 act = nn.ReLU()
-    
-    
+
+
 def adjust_hw(x, h1, w1):
     zeros = lambda b, n, h, w: torch.zeros((b, n, h, w), device=x.device)
     b, n0, h0, w0 = x.shape
@@ -364,15 +364,15 @@ def adjust_n(x, n1):
 
 
 
-    
-    
+
+
 
 def expandtoeven(x):
     'Expands a tensor such that its multiple of two'
     b, c, h, w = x.shape
     if h%2==1:
         x = torch.nn.functional.pad(x, (0, 1, 0, 0))
-    if w%2==1: 
+    if w%2==1:
         x = torch.nn.functional.pad(x, (0, 0, 0, 1))
     return x
 
@@ -387,8 +387,8 @@ def addskip(x, xskip):
         # r and s add up to hp-h = wp-w
         x = x[:,:,r:-s,r:-s]
     return x+xskip
-    
-    
+
+
 
 
 
@@ -408,7 +408,7 @@ class ResBlock(nn.Module):
         if bn:
             self.bn1 = nn.BatchNorm2d(nmid)
             self.bn2 = nn.BatchNorm2d(n1)
-        
+
     def forward(self, x):
         x0 = x
         if self.bn:
@@ -425,7 +425,7 @@ class ResBlock(nn.Module):
             x = self.conv2(x)
         x0 = adjust_n(x0, x.shape[1])
         return x0 + x
-    
+
 '''
 def adjustto(x, y):
     'Adjusts the shape of x to that of y'
@@ -451,17 +451,17 @@ def adjustto(x, y):
         pass
     else:
         raise NotImplemented # Höhe größer aber Weite geringer oder umgekehrt
-    
+
     # Adjust channel number
     if n1 > n0:
         x = torch.cat((x, zeros(b, n1-n0, h1, w1)), dim=1)
     elif n1 < n0:
         x = n1/n0 * sum([ x[:,i:i+n1] for i in range(0,n0,n1)])
-        
+
     assert x.shape==y.shape, (x.shape, (b,n0,h0,w0), (b,n1,h1,w1))
     return x'''
-    
-    
+
+
 
 class ResBlockDown(nn.Module):
     def __init__(self, nin, nout, ks=3, bn=True):
@@ -479,7 +479,7 @@ class ResBlockDown(nn.Module):
             self.bn_res = lambda x: x
             self.bn1 = lambda x: x
             self.bn2 = lambda x: x
-        
+
     def forward(self, x):
         xr = avgpool(x)
         xr = self.conv_res(self.bn_res(xr))
@@ -487,8 +487,8 @@ class ResBlockDown(nn.Module):
         x  = self.conv2(act(self.bn2(x)))
         x  = xr + x
         return x
-    
-    
+
+
 class ResBlockUp(nn.Module):
     def __init__(self, nin, nout):
         'Upscaling Resnet Block (actually not a Resnet Block)'
@@ -498,8 +498,8 @@ class ResBlockUp(nn.Module):
         x = act(self.conv(x))
         return x
 
-    
-    
+
+
 def update_mt(mt, n, tau):
     # updates the mean teacher by the network
     mtdict = mt.state_dict()
@@ -507,7 +507,10 @@ def update_mt(mt, n, tau):
     for k in mtdict.keys():
         mtdict[k] = tau * mtdict[k] + (1-tau) * ndict[k]
     mt.load_state_dict(mtdict)
-    
-    
-    
-    
+
+
+def softmax2d(x):
+    b, c, h, w = x.shape
+    x = x.reshape(b, -1)
+    x = nn.functional.softmax(x, dim=-1)
+    return x.reshape(b, c, h, w)

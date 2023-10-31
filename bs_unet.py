@@ -71,11 +71,12 @@ class bs_unet(nn.Module):
         #print(x.shape)
         
         x = self.conv_m1(x)
-        self.p = x
-        x = sigmoid(x)
         
         # NCHW zu NHWC
         x = x.permute([0, 2, 3, 1])
+        self.p = x
+        x = sigmoid(x)
+
         return x
     
     def predict(self, x):

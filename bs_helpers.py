@@ -7,7 +7,15 @@ import matplotlib.pyplot as plt
 from numba import njit, jit
 import random
 
-from bs_gameclass import *
+
+
+
+def argmax2d(arr):
+    n, m = arr.shape
+    ij = arr.argmax()
+    i, j = ij//m, ij%m
+    return i, j
+
 
 def create_sea(seed=None):
     'Creates a sea with random ships on it'
@@ -68,6 +76,7 @@ def create_detection(seed=None, l=5):
 
 
 def newrandomstate(t=1.):
+    from bs_gameclass import GameState
     s = GameState()
     s.det = np.random.rand(10,10) < np.random.rand()*t
     s.sea = create_sea()
@@ -86,4 +95,6 @@ def plot_sea(sea, det, ax=None):
     #ax.imshow(visualize(sea, det), vmin=-2, cmap='plasma')
     ax.imshow(visualize(sea, det), vmin=-1, vmax=3.15, cmap='cividis')
     ax.axis('off')
+    
+    
     

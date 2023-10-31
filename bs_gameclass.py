@@ -23,8 +23,8 @@ def getprobability(s, net=unet):
         _probabilities[h] = prob
     else:
         prob = _probabilities[h]
-    plt.imshow(prob, vmin=0., vmax=1.)
-    plt.show()
+    #plt.imshow(prob, vmin=0., vmax=1.)
+    #plt.show()
     return prob
     
     
@@ -47,6 +47,7 @@ class GameClass:
     @staticmethod
     def getNextState(s, a, hidden=None):
         s = s.copy()
+        assert s.det[a] == 0, 'Square already discovered'
         if type(hidden) is type(None):
             # no information of ships, must be rolled out
             s.sea[a] = np.random.rand() < getprobability(s)[a]
