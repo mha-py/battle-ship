@@ -1,9 +1,35 @@
 
 import numpy as np
 import torch
+from torch import nn
+F = torch.nn.functional
 
 
 GPU = True
+
+
+def argmax2d(arr):
+    n, m = arr.shape
+    ij = arr.argmax()
+    i, j = ij//m, ij%m
+    return i, j
+
+
+def argmaxminrnd(v, maximize, rnd=True, thr=0.):
+    '''Returns an index k for which v[k] max/min. If more than one index is
+    max/minimizing, a random index of these is chosen.
+    maximize: If True, finds the maximizing index, otherwise the minimizing index
+    rnd: If False, this function will work like np.argmax/min
+    thr: Small value that lowers the bound for a value to be considered as optimal.'''
+    s = +1 if maximize else -1
+    sv = s * np.array(v)
+    if not rnd:
+        return np.argmax(sv)
+    else:
+        available = (sv >= np.max(sv)-thr)
+        inds = np.arange(len(sv))[available]
+        return np.random.choice(inds)
+    
 
 
 
@@ -114,14 +140,15 @@ def augment8_dual(x, y):
 
 #### HSV and RGB ####
 
-from colorsys import rgb_to_hsv, hsv_to_rgb
 def rgb2hsv(img):
+    from colorsys import rgb_to_hsv
     shape = img.shape
     img = img.reshape(-1, 3)
     for k in range(img.shape[0]):
         img[k] = rgb_to_hsv(*img[k])
     return img.reshape(shape)
 def hsv2rgb(img):
+    from colorsys import hsv_to_rgb
     shape = img.shape
     img = img.reshape(-1, 3)
     for k in range(img.shape[0]):
@@ -131,9 +158,9 @@ def hsv2rgb(img):
 
 #### Blurring ####
 
-from scipy import signal
 
 def blurr_imgs(imgs, radius):
+    from scipy import signal
     # bhwc
     if radius == 0:
         return imgs
@@ -216,9 +243,6 @@ def randomcrop_dual(y1, y2, h, w=None):
 
 #############
 
-import torch
-from torch import nn
-F = nn.functional
 relu = F.relu
 
 
@@ -316,8 +340,6 @@ class AttentionLayer(nn.Module):
 
 #=============================================================
 
-from torch import nn
-import torch
 avgpool = nn.AvgPool2d(2)
 
 act = nn.ReLU()
@@ -514,3 +536,12 @@ def softmax2d(x):
     x = x.reshape(b, -1)
     x = nn.functional.softmax(x, dim=-1)
     return x.reshape(b, c, h, w)
+
+
+
+def pairplot(a, b):
+    import seaborn as sns
+    import pandas as pd
+
+    df = pd.DataFrame(np.array([a,b]).T)
+    sns.pairplot(df)
