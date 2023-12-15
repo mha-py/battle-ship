@@ -8,6 +8,8 @@ from numba import njit, jit
 import random
 
 
+SX = 10
+NSHIPS = 10
 
 
 def argmax2d(arr):
@@ -95,3 +97,30 @@ def plot_sea(sea, det, ax=None):
     
     
     
+def getStartEndPoints(ship):
+    T = (ship.sum(0)>0).sum()==1
+    if T:
+        ship = ship.T
+    l = ship.sum(1).argmax()
+    i = ship.sum(0).argmax()
+    j = i + ship.sum()-1
+    if not T:
+        return (i, l), (j, l)
+    else:
+        return (l, i), (l, j)
+
+def plot_ships(ships, det, ax=None, oldversion=False):
+    if oldversion: # Achsen wurden vertauscht in neue version
+        ships = ships.transpose(2, 0, 1)
+    if ax is None: ax = plt.gca()
+    background = np.zeros((SX, SX, 3))
+    background[:,:] = (0.1, 0.3, 0.8)
+    ax.imshow(background, zorder=-50)
+     
+    for k in range(len(ships)):
+        pt1, pt2 = getStartEndPoints(ships[k])
+        ax.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]], c=(0.6,0.6,0.6), lw=15, zorder=-20)
+    ones = np.ones_like(det).astype(float)*0
+    det = np.stack([ones, ones, ones, (1-det)/3], -1)
+    ax.imshow(det, cmap='gray')
+    ax.axis('off')
